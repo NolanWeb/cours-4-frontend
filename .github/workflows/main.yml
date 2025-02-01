@@ -6,12 +6,10 @@ on:
       - main
   workflow_dispatch:
 
-
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: write
   pages: write
@@ -19,7 +17,7 @@ permissions:
 
 jobs:
   lint:
-    name: Echo Hello World
+    name: Lint and Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -33,10 +31,37 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
+
+      - name: Format (Prettier)
+        run: npm run format
+
+      - name: Commit changes if any
+        run: |
+          git add .
+          git commit -m 'Format code' || echo "No changes to commit"
+          git push || echo "No changes to push"
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test
+
   build:
     name: Build
     needs:
       - lint
+      - test
     runs-on: ubuntu-latest
     env:
       VITE_APP_NAME: Github Pages
@@ -74,4 +99,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
- 
